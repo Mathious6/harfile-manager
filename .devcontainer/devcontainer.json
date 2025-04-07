@@ -1,0 +1,21 @@
+{
+    "name": "Go",
+    "dockerFile": "Dockerfile",
+    "remoteUser": "vscode",
+    "shutdownAction": "stopContainer",
+    "postCreateCommand": "go mod download",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh"
+            },
+            "extensions": [
+                "golang.go",
+                "ms-azuretools.vscode-docker"
+            ]
+        }
+    },
+    "mounts": [
+        "source=go-modules,target=/go,type=volume" // Keep go modules in a volume
+    ]
+}

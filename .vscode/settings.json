@@ -1,0 +1,25 @@
+{
+    // GENERAL SETTINGS:
+    "editor.formatOnSave": true,
+    "files.autoSave": "onFocusChange",
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    // GOLANG SETTINGS:
+    "go.toolsManagement.autoUpdate": true,
+    "go.useLanguageServer": true,
+    "go.lintTool": "golangci-lint",
+    "go.formatTool": "goimports",
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+        "go.mod": "go.sum",
+        "*.go": "${basename}_test.go",
+    },
+    "[go]": {
+        "editor.defaultFormatter": "golang.go",
+        "editor.insertSpaces": true
+    },
+    // OTHER SETTINGS:
+    "[dockerfile]": {
+        "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+    }
+}
