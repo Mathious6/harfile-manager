@@ -8,6 +8,14 @@ import (
 	"github.com/Mathious6/harkit/harfile"
 )
 
+const (
+	HeaderOrderKey = "Header-Order"
+	ContentTypeKey = "Content-Type"
+	CookieKey      = "Cookie"
+	SetCookieKey   = "Set-Cookie"
+	LocationKey    = "Location"
+)
+
 func convertCookies(cookies []*http.Cookie) []*harfile.Cookie {
 	harCookies := make([]*harfile.Cookie, len(cookies))
 
@@ -36,7 +44,7 @@ func convertHeaders(header http.Header) []*harfile.NameValuePair {
 
 	// Used to sort headers in HAR file if needed (e.g. https://github.com/bogdanfinn/tls-client)
 	seen := make(map[string]bool)
-	for _, name := range header.Values("Header-Order") {
+	for _, name := range header.Values(HeaderOrderKey) {
 		if values := header.Values(name); len(values) > 0 {
 			for _, value := range values {
 				harHeaders = append(harHeaders, &harfile.NameValuePair{Name: name, Value: value})
@@ -46,7 +54,7 @@ func convertHeaders(header http.Header) []*harfile.NameValuePair {
 	}
 
 	for name, values := range header {
-		if seen[name] || strings.EqualFold(name, "Header-Order") {
+		if seen[name] || strings.EqualFold(name, HeaderOrderKey) {
 			continue
 		}
 		for _, value := range values {

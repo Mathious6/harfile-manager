@@ -61,7 +61,7 @@ func extractPostData(req *http.Request) (*harfile.PostData, error) {
 	defer req.Body.Close()
 	req.Body = io.NopCloser(bytes.NewBuffer(buf))
 
-	mimeType := req.Header.Get("Content-Type")
+	mimeType := req.Header.Get(ContentTypeKey)
 	postData := &harfile.PostData{MimeType: mimeType}
 
 	if strings.HasPrefix(mimeType, "application/x-www-form-urlencoded") {
@@ -107,7 +107,7 @@ func extractPostData(req *http.Request) (*harfile.PostData, error) {
 				postData.Params = append(postData.Params, &harfile.Param{
 					Name:        name,
 					FileName:    fileHeader.Filename,
-					ContentType: fileHeader.Header.Get("Content-Type"),
+					ContentType: fileHeader.Header.Get(ContentTypeKey),
 					Value:       string(content),
 				})
 			}
