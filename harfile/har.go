@@ -6,7 +6,7 @@ import "time"
 
 // HAR parent container for log.
 type HAR struct {
-	Log *Log `json:"log"` //
+	Log *Log `json:"log"` // Log represents the root of exported data.
 }
 
 // Log represents the root of exported data.
@@ -99,14 +99,14 @@ type Response struct {
 // Cookie contains list of all cookies (used in [Request] and [Response]
 // objects).
 type Cookie struct {
-	Name     string `json:"name"`              // The name of the cookie.
-	Value    string `json:"value"`             // The cookie value.
-	Path     string `json:"path,omitempty"`    // The path pertaining to the cookie.
-	Domain   string `json:"domain,omitempty"`  // The host of the cookie.
-	Expires  string `json:"expires,omitempty"` // Cookie expiration time. (ISO 8601 - YYYY-MM-DDThh:mm:ss.sTZD, e.g. 2009-07-24T19:20:30.123+02:00).
-	HTTPOnly bool   `json:"httpOnly"`          // Set to true if the cookie is HTTP only, false otherwise.
-	Secure   bool   `json:"secure"`            // True if the cookie was transmitted over ssl, false otherwise.
-	Comment  string `json:"comment,omitempty"` // A comment provided by the user or the application.
+	Name     string `json:"name"`               // The name of the cookie.
+	Value    string `json:"value"`              // The cookie value.
+	Path     string `json:"path,omitempty"`     // The path pertaining to the cookie.
+	Domain   string `json:"domain,omitempty"`   // The host of the cookie.
+	Expires  string `json:"expires,omitempty"`  // Cookie expiration time. (ISO 8601 - YYYY-MM-DDThh:mm:ss.sTZD, e.g. 2009-07-24T19:20:30.123+02:00).
+	HTTPOnly bool   `json:"httpOnly,omitempty"` // Set to true if the cookie is HTTP only, false otherwise.
+	Secure   bool   `json:"secure,omitempty"`   // True if the cookie was transmitted over ssl, false otherwise.
+	Comment  string `json:"comment,omitempty"`  // A comment provided by the user or the application.
 }
 
 // NameValuePair describes a name/value pair.
