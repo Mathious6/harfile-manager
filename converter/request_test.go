@@ -16,6 +16,7 @@ import (
 const (
 	METHOD   = http.MethodPost
 	URL      = "https://example.com/api?foo=bar"
+	URI      = "/api?foo=bar"
 	PROTOCOL = "HTTP/1.1"
 
 	HEADER_ORDER_KEY = "Header-Order"
@@ -155,10 +156,7 @@ func TestConverter_GivenHeaders_WhenConvertingHTTPRequest_ThenHeadersSizeShouldB
 	result, err := converter.FromHTTPRequest(req)
 	require.NoError(t, err)
 
-	expectedSize := len(HEADER1_NAME) + len(HEADER1_VALUE)
-	expectedSize += len(HEADER2_NAME) + len(HEADER2_VALUE)
-	expectedSize += len(COOKIE_KEY) + len(COOKIE_NAME+"="+COOKIE_VALUE)
-	assert.Equal(t, int64(expectedSize), result.HeadersSize, "HAR header size <> request header size")
+	assert.Equal(t, computeHeadersSize(), result.HeadersSize, "HAR header size <> request header size")
 }
 
 func TestConverter_GivenBody_WhenConvertingHTTPRequest_ThenBodySizeShouldBeCorrect(t *testing.T) {
@@ -192,6 +190,19 @@ func createRequest(t *testing.T, body io.Reader, contentType string) *http.Reque
 	}
 
 	return req
+}
+
+// computeHeadersSize calculates the total size of HTTP headers in bytes.
+// It sums up the lengths of the HTTP request line, individual headers,
+// and the terminating double CRLF sequence.
+func computeHeadersSize() int64 {
+	headersSize := len(METHOD + " " + URI + " " + PROTOCOL + "\r\n")
+	headersSize += len(HEADER2_NAME + ": " + HEADER2_VALUE + "\r\n")
+	headersSize += len(HEADER1_NAME + ": " + HEADER1_VALUE + "\r\n")
+	headersSize += len(COOKIE_KEY + ": " + COOKIE_NAME + "=" + COOKIE_VALUE + "\r\n")
+	headersSize += len("\r\n\r\n")
+
+	return int64(headersSize)
 }
 
 // createMultipartBody constructs a multipart HTTP request body with predefined fields and file content.
