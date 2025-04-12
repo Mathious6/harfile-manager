@@ -19,8 +19,13 @@ func NewEntry() *EntryBuilder {
 	return &EntryBuilder{
 		entry: &harfile.Entry{
 			StartedDateTime: time.Now(),
+			Time:            -1,
 			Cache:           &harfile.Cache{},
-			Timings:         &harfile.Timings{},
+			Timings: &harfile.Timings{
+				Send:    -1,
+				Wait:    -1,
+				Receive: -1,
+			},
 		},
 	}
 }
@@ -40,6 +45,10 @@ func (e *EntryBuilder) AddResponse(resp *http.Response) error {
 		return err
 	}
 	e.entry.Response = harResp
+
+	e.entry.Timings.Receive = float64(time.Since(e.entry.StartedDateTime).Milliseconds())
+	e.entry.Time = e.entry.Timings.Total()
+
 	return nil
 }
 
