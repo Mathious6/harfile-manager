@@ -121,10 +121,11 @@ type NameValuePair struct {
 }
 
 // PostData describes posted data, if any (embedded in [Request] object).
+// Text and params fields are mutually exclusive.
 type PostData struct {
 	MimeType string   `json:"mimeType"`          // Mime type of posted data.
-	Params   []*Param `json:"params"`            // List of posted parameters (in case of URL encoded parameters).
-	Text     string   `json:"text"`              // Plain text posted data
+	Params   []*Param `json:"params,omitempty"`  // List of posted parameters (in case of URL encoded parameters).
+	Text     string   `json:"text,omitempty"`    // Plain text posted data
 	Comment  string   `json:"comment,omitempty"` // A comment provided by the user or the application.
 }
 
