@@ -1,10 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"net/url"
+	"strings"
+
 	"github.com/Mathious6/harkit/harhandler"
 	http "github.com/bogdanfinn/fhttp"
 	tls_client "github.com/bogdanfinn/tls-client"
 )
+
+const URL = "https://httpbin.org/post?source=harkit"
 
 func main() {
 	handler := harhandler.NewHandler()
@@ -15,29 +22,37 @@ func main() {
 		// tls_client.WithCharlesProxy("127.0.0.1", "8888"), // TODO : do not commit this
 	)
 
-	entry := harhandler.NewEntry()
+	// 1. Form URL-encoded
+	form := url.Values{}
+	form.Set("name", "Pierre")
+	form.Set("role", "developer")
+	sendRequest(client, handler, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+	fmt.Println("✅ Form URL-encoded request sent")
 
-	req, _ := http.NewRequest(http.MethodPost, "https://httpbin.org/post?source=harkit", nil)
-	req.Header.Add("host", "httpbin.org")
-	req.Header.Add("accept-encoding", "gzip, deflate, br")
-	req.Header.Add("accept", "*/*")
-	req.Header.Add("user-agent", "harkit-example")
-	req.Header.Add(http.HeaderOrderKey, "host")
-	req.Header.Add(http.HeaderOrderKey, "accept-encoding")
-	req.Header.Add(http.HeaderOrderKey, "accept")
-	req.Header.Add(http.HeaderOrderKey, "user-agent")
-	req.Header.Add(http.HeaderOrderKey, "cookie")
+	// 2. JSON
+	jsonBody := `{"name":"Pierre","role":"developer"}`
+	sendRequest(client, handler, "application/json", strings.NewReader(jsonBody))
+	fmt.Println("✅ JSON request sent")
+
+	handler.Save("example.har")
+}
+
+func sendRequest(c tls_client.HttpClient, h *harhandler.HARHandler, contentType string, body io.Reader) {
+	req, _ := http.NewRequest(http.MethodPost, URL, body)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("User-Agent", "harkit-example")
 	req.AddCookie(&http.Cookie{Name: "example", Value: "cookie"})
+
+	entry := harhandler.NewEntry()
 	_ = entry.AddRequest(req)
 
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
 	_ = entry.AddResponse(resp)
 
-	handler.AddEntry(entry)
-
-	handler.Save("example.har")
+	h.AddEntry(entry)
 }
