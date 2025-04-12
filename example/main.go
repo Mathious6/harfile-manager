@@ -1,42 +1,43 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-
-	"github.com/Mathious6/harkit/converter"
+	"github.com/Mathious6/harkit/harhandler"
 	http "github.com/bogdanfinn/fhttp"
 	tls_client "github.com/bogdanfinn/tls-client"
 )
 
 func main() {
-	jar := tls_client.NewCookieJar()
-	options := []tls_client.HttpClientOption{
-		tls_client.WithCookieJar(jar),
-		tls_client.WithCharlesProxy("127.0.0.1", "8888"), // TODO: REMOVE BEFORE PUSHING
-	}
+	handler := harhandler.NewHandler()
 
-	client, _ := tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
+	client, _ := tls_client.NewHttpClient(
+		tls_client.NewNoopLogger(),
+		tls_client.WithCookieJar(tls_client.NewCookieJar()),
+		// tls_client.WithCharlesProxy("127.0.0.1", "8888"), // TODO : do not commit this
+	)
 
-	req, _ := http.NewRequest(http.MethodGet, "https://tls.peet.ws/api/all", nil)
+	entry := harhandler.NewEntry()
+
+	req, _ := http.NewRequest(http.MethodPost, "https://httpbin.org/post?source=harkit", nil)
+	req.Header.Add("host", "httpbin.org")
+	req.Header.Add("accept-encoding", "gzip, deflate, br")
 	req.Header.Add("accept", "*/*")
 	req.Header.Add("user-agent", "harkit-example")
+	req.Header.Add(http.HeaderOrderKey, "host")
+	req.Header.Add(http.HeaderOrderKey, "accept-encoding")
+	req.Header.Add(http.HeaderOrderKey, "accept")
 	req.Header.Add(http.HeaderOrderKey, "user-agent")
+	req.Header.Add(http.HeaderOrderKey, "cookie")
 	req.AddCookie(&http.Cookie{Name: "example", Value: "cookie"})
+	_ = entry.AddRequest(req)
 
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
+	_ = entry.AddResponse(resp)
 
-	har, err := converter.BuildHAR(req, resp)
-	if err != nil {
-		panic(err)
-	}
+	handler.AddEntry(entry)
 
-	jsonBytes, _ := json.MarshalIndent(har, "", "  ")
-	_ = os.WriteFile("main.har", jsonBytes, 0644)
-	fmt.Println("✅ HAR file saved as main.har")
+	handler.Save("example.har")
 }
