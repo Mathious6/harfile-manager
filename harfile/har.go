@@ -94,7 +94,7 @@ type Response struct {
 	Cookies     []*Cookie        `json:"cookies"`           // List of cookie objects.
 	Headers     []*NameValuePair `json:"headers"`           // List of header objects.
 	Content     *Content         `json:"content"`           // Details about the response body.
-	RedirectURL string           `json:"redirectURL"`       // Redirection target URL from the Location response header.
+	RedirectURL *string          `json:"redirectURL"`       // Redirection target URL from the Location response header.
 	HeadersSize int64            `json:"headersSize"`       // Total number of bytes from the start of the HTTP response message until (and including) the double CRLF before the body. Set to -1 if the info is not available.
 	BodySize    int64            `json:"bodySize"`          // Size of the received response body in bytes. Set to zero in case of responses coming from the cache (304). Set to -1 if the info is not available.
 	Comment     string           `json:"comment,omitempty"` // A comment provided by the user or the application.

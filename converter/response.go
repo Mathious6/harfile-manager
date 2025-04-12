@@ -32,13 +32,14 @@ func FromHTTPResponse(resp *http.Response) (*harfile.Response, error) {
 	}, nil
 }
 
-func locateRedirectURL(resp *http.Response) string {
+func locateRedirectURL(resp *http.Response) *string {
 	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
 		if loc, err := resp.Location(); err == nil {
-			return loc.String()
+			url := loc.String()
+			return &url
 		}
 	}
-	return ""
+	return nil
 }
 
 func buildContent(resp *http.Response) (*harfile.Content, error) {
