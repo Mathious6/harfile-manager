@@ -187,8 +187,8 @@ func createRequest(t *testing.T, body io.Reader, contentType string) *http.Reque
 	req.Header.Add(REQ_HEADER1_NAME, REQ_HEADER1_VALUE)
 	req.Header.Add(REQ_HEADER2_NAME, REQ_HEADER2_VALUE)
 
-	req.Header.Add(converter.HeaderOrderKey, REQ_HEADER2_NAME)
-	req.Header.Add(converter.HeaderOrderKey, REQ_HEADER1_NAME)
+	req.Header.Add(http.HeaderOrderKey, REQ_HEADER2_NAME)
+	req.Header.Add(http.HeaderOrderKey, REQ_HEADER1_NAME)
 
 	if contentType != "" {
 		req.Header.Add(converter.ContentTypeKey, contentType)

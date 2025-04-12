@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	HeaderOrderKey = "Header-Order"
 	ContentTypeKey = "Content-Type"
 	CookieKey      = "Cookie"
 	SetCookieKey   = "Set-Cookie"
@@ -44,17 +43,18 @@ func convertHeaders(header http.Header) []*harfile.NameValuePair {
 
 	// Used to sort headers in HAR file if needed (e.g. https://github.com/bogdanfinn/tls-client)
 	seen := make(map[string]bool)
-	for _, name := range header.Values(HeaderOrderKey) {
+	for _, name := range header.Values(http.HeaderOrderKey) {
 		if values := header.Values(name); len(values) > 0 {
+			name = http.CanonicalHeaderKey(name)
 			for _, value := range values {
 				harHeaders = append(harHeaders, &harfile.NameValuePair{Name: name, Value: value})
 			}
-			seen[http.CanonicalHeaderKey(name)] = true
+			seen[name] = true
 		}
 	}
 
 	for name, values := range header {
-		if seen[name] || strings.EqualFold(name, HeaderOrderKey) {
+		if seen[name] || strings.EqualFold(name, http.HeaderOrderKey) {
 			continue
 		}
 		for _, value := range values {
