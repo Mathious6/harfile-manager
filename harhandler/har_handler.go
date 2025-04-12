@@ -5,12 +5,22 @@ import (
 	"github.com/Mathious6/harkit/harfile"
 )
 
+type HandlerOption func(*HARHandler)
+
 type HARHandler struct {
 	log *harfile.Log
+
+	resolveIPAddress bool
 }
 
-func NewHandler() *HARHandler {
-	return &HARHandler{
+func WithServerIPAddress() HandlerOption {
+	return func(h *HARHandler) {
+		h.resolveIPAddress = true
+	}
+}
+
+func NewHandler(opts ...HandlerOption) *HARHandler {
+	h := &HARHandler{
 		log: &harfile.Log{
 			Version: "1.2",
 			Creator: &harfile.Creator{
@@ -20,9 +30,16 @@ func NewHandler() *HARHandler {
 			Entries: []*harfile.Entry{},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	return h
 }
 
-func (h *HARHandler) AddEntry(entry *harfile.Entry) {
+func (h *HARHandler) AddEntry(builder *EntryBuilder) {
+	entry := builder.build(h.resolveIPAddress)
 	h.log.Entries = append(h.log.Entries, entry)
 }
 

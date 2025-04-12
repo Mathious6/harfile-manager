@@ -52,9 +52,10 @@ func (e *EntryBuilder) AddResponse(resp *http.Response) error {
 	return nil
 }
 
-func (e *EntryBuilder) Build() *harfile.Entry {
-	e.entry.ServerIPAddress = getServerIPAddress(e.entry.Request.URL)
-
+func (e *EntryBuilder) build(resolveIP bool) *harfile.Entry {
+	if resolveIP && e.entry.Request != nil {
+		e.entry.ServerIPAddress = getServerIPAddress(e.entry.Request.URL)
+	}
 	return e.entry
 }
 
