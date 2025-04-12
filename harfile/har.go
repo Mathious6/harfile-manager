@@ -177,6 +177,20 @@ type Timings struct {
 	Comment string  `json:"comment,omitempty"`          // A comment provided by the user or the application.
 }
 
+// Total returns the total time of the request/response round trip.
+func (t *Timings) Total() float64 {
+	sum := 0.0
+	sum += t.Blocked
+	sum += t.DNS
+	sum += t.Connect
+	sum += t.Send
+	sum += t.Wait
+	sum += t.Receive
+	sum += t.Ssl
+	return sum
+}
+
+// Save saves the HAR data to a file in JSON format under the specified filename.
 func (h *HAR) Save(filename string) error {
 	jsonBytes, err := json.MarshalIndent(h, "", "  ")
 	if err != nil {
