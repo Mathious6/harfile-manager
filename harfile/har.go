@@ -2,7 +2,11 @@
 // See: http://www.softwareishard.com/blog/har-12-spec/
 package harfile
 
-import "time"
+import (
+	"encoding/json"
+	"os"
+	"time"
+)
 
 // HAR parent container for log.
 type HAR struct {
@@ -171,4 +175,18 @@ type Timings struct {
 	Receive float64 `json:"receive"`                    // Time required to read entire response from the server (or cache).
 	Ssl     float64 `json:"ssl,omitempty,omitzero"`     // Time required for SSL/TLS negotiation. If this field is defined then the time is also included in the connect field (to ensure backward compatibility with HAR 1.1). Use -1 if the timing does not apply to the current request.
 	Comment string  `json:"comment,omitempty"`          // A comment provided by the user or the application.
+}
+
+func (h *HAR) Save(filename string) error {
+	jsonBytes, err := json.MarshalIndent(h, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile("main.har", jsonBytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
