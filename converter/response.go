@@ -29,7 +29,6 @@ func FromHTTPResponse(resp *http.Response) (*harfile.Response, error) {
 		RedirectURL: locateRedirectURL(resp),
 		HeadersSize: -1,
 		BodySize:    resp.ContentLength,
-		Comment:     "Generated from FromHTTPResponse",
 	}, nil
 }
 

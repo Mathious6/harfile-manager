@@ -33,12 +33,11 @@ func FromHTTPRequest(req *http.Request) (*harfile.Request, error) {
 		PostData:    postData,
 		HeadersSize: computeRequestHeadersSize(req, headers),
 		BodySize:    req.ContentLength,
-		Comment:     "Generated from FromHTTPRequest",
 	}, nil
 }
 
 func convertQueryParams(u *url.URL) []*harfile.NameValuePair {
-	var result []*harfile.NameValuePair
+	result := make([]*harfile.NameValuePair, 0)
 
 	for key, values := range u.Query() {
 		for _, value := range values {
