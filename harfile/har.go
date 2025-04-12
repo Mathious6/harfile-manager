@@ -178,15 +178,14 @@ type Timings struct {
 }
 
 // Total returns the total time of the request/response round trip.
+// Ignoring -1 values which indicate that the timing does not apply to the current request.
 func (t *Timings) Total() float64 {
 	sum := 0.0
-	sum += t.Blocked
-	sum += t.DNS
-	sum += t.Connect
-	sum += t.Send
-	sum += t.Wait
-	sum += t.Receive
-	sum += t.Ssl
+	for _, v := range []float64{t.Blocked, t.DNS, t.Connect, t.Send, t.Wait, t.Receive, t.Ssl} {
+		if v > 0 {
+			sum += v
+		}
+	}
 	return sum
 }
 
