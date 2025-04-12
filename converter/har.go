@@ -1,6 +1,8 @@
 package converter
 
 import (
+	"context"
+	"net"
 	"time"
 
 	"github.com/Mathious6/harkit/harfile"
@@ -31,10 +33,19 @@ func BuildHAR(req *http.Request, resp *http.Response) (*harfile.HAR, error) {
 					Time:            0,
 					Request:         harReq,
 					Response:        harResp,
+					ServerIPAddress: getServerIPAddress(req.Host),
 					Cache:           &harfile.Cache{},
 					Timings:         &harfile.Timings{},
 				},
 			},
 		},
 	}, nil
+}
+
+func getServerIPAddress(host string) string {
+	ipAddress, err := net.DefaultResolver.LookupIPAddr(context.Background(), host)
+	if err != nil || len(ipAddress) == 0 {
+		return ""
+	}
+	return ipAddress[0].IP.String()
 }
