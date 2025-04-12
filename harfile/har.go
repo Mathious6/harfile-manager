@@ -183,7 +183,7 @@ func (h *HAR) Save(filename string) error {
 		return err
 	}
 
-	err = os.WriteFile("main.har", jsonBytes, 0644)
+	err = os.WriteFile(filename, jsonBytes, 0644)
 	if err != nil {
 		return err
 	}
