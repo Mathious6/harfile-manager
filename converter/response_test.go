@@ -116,7 +116,7 @@ func TestConverter_GivenRedirect_WhenConvertingHTTPResponse_ThenRedirectURLShoul
 	result, err := converter.FromHTTPResponse(resp)
 	require.NoError(t, err)
 
-	assert.Equal(t, RESP_LOCATION, result.RedirectURL, "HAR redirect URL <> response location header")
+	assert.Equal(t, RESP_LOCATION, *result.RedirectURL, "HAR redirect URL <> response location header")
 }
 
 func TestConverter_GivenBody_WhenConvertingHTTPResponse_ThenBodySizeShouldBeCorrect(t *testing.T) {

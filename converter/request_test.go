@@ -19,9 +19,9 @@ const (
 	REQ_URI      = "/api?foo=bar"
 	REQ_PROTOCOL = "HTTP/1.1"
 
-	REQ_HEADER1_NAME  = "NaMe1"
+	REQ_HEADER1_NAME  = "Name1"
 	REQ_HEADER1_VALUE = "value1"
-	REQ_HEADER2_NAME  = "nAmE2"
+	REQ_HEADER2_NAME  = "Name2"
 	REQ_HEADER2_VALUE = "value2"
 
 	REQ_COOKIE_NAME  = "name"
