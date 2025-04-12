@@ -1,6 +1,9 @@
 package harhandler
 
-import "github.com/Mathious6/harkit/harfile"
+import (
+	"github.com/Mathious6/harkit"
+	"github.com/Mathious6/harkit/harfile"
+)
 
 type HARHandler struct {
 	log *harfile.Log
@@ -12,7 +15,7 @@ func NewHandler() *HARHandler {
 			Version: "1.2",
 			Creator: &harfile.Creator{
 				Name:    "harkit",
-				Version: "0.2.0",
+				Version: harkit.Version,
 			},
 			Entries: []*harfile.Entry{},
 		},
