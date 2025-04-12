@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"net/http"
 
 	"github.com/Mathious6/harkit/harfile"
+	http "github.com/bogdanfinn/fhttp"
 )
 
 func FromHTTPResponse(resp *http.Response) (*harfile.Response, error) {

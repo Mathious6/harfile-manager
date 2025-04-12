@@ -1,11 +1,11 @@
 package converter
 
 import (
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Mathious6/harkit/harfile"
+	http "github.com/bogdanfinn/fhttp"
 )
 
 const (

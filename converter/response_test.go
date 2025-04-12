@@ -3,11 +3,11 @@ package converter_test
 import (
 	"bytes"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Mathious6/harkit/converter"
+	http "github.com/bogdanfinn/fhttp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

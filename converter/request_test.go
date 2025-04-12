@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/Mathious6/harkit/converter"
+	http "github.com/bogdanfinn/fhttp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

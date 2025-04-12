@@ -1,10 +1,10 @@
 package converter
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/Mathious6/harkit/harfile"
+	http "github.com/bogdanfinn/fhttp"
 )
 
 func BuildHAR(req *http.Request, resp *http.Response) (*harfile.HAR, error) {

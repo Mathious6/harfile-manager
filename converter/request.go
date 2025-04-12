@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/Mathious6/harkit/harfile"
+	http "github.com/bogdanfinn/fhttp"
 )
 
 func FromHTTPRequest(req *http.Request) (*harfile.Request, error) {
