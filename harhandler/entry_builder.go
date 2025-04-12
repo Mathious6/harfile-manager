@@ -3,6 +3,7 @@ package harhandler
 import (
 	"context"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/Mathious6/harkit/converter"
@@ -48,10 +49,14 @@ func (e *EntryBuilder) Build() *harfile.Entry {
 	return e.entry
 }
 
-func getServerIPAddress(url string) string {
-	host, _, err := net.SplitHostPort(url)
+func getServerIPAddress(reqUrl string) string {
+	url, err := url.Parse(reqUrl)
+	if err != nil {
+		return ""
+	}
 
-	ipAddress, err := net.DefaultResolver.LookupIPAddr(context.Background(), host)
+	// WARN: This is a blocking call and may take time to resolve
+	ipAddress, err := net.DefaultResolver.LookupIPAddr(context.Background(), url.Hostname())
 	if err != nil || len(ipAddress) == 0 {
 		return ""
 	}
