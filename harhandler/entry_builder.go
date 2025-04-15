@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Mathious6/harkit/converter"
@@ -30,11 +31,16 @@ func NewEntry() *EntryBuilder {
 	}
 }
 
-func (e *EntryBuilder) AddRequest(req *http.Request) error {
+func (e *EntryBuilder) AddRequest(req *http.Request, cookies []*http.Cookie) error {
 	harReq, err := converter.FromHTTPRequest(req)
 	if err != nil {
 		return err
 	}
+
+	// If our client has a cookie jar, we need to merge the cookies
+	harReq.Headers = mergeCookieHeader(harReq.Headers, cookies)
+	harReq.Cookies = mergeCookies(harReq.Cookies, cookies)
+
 	e.entry.Request = harReq
 	return nil
 }
@@ -71,4 +77,60 @@ func getServerIPAddress(reqUrl string) string {
 		return ""
 	}
 	return ipAddress[0].IP.String()
+}
+
+func mergeCookies(existing []*harfile.Cookie, new []*http.Cookie) []*harfile.Cookie {
+	if len(new) == 0 {
+		return existing
+	}
+
+	merged := make([]*harfile.Cookie, 0, len(existing)+len(new))
+	merged = append(merged, existing...)
+
+	for _, cookie := range new {
+		merged = append(merged, &harfile.Cookie{
+			Name:     cookie.Name,
+			Value:    cookie.Value,
+			Path:     cookie.Path,
+			Domain:   cookie.Domain,
+			Expires:  cookie.RawExpires,
+			HTTPOnly: cookie.HttpOnly,
+			Secure:   cookie.Secure,
+		})
+	}
+
+	return merged
+
+}
+
+func mergeCookieHeader(existing []*harfile.NameValuePair, new []*http.Cookie) []*harfile.NameValuePair {
+	if len(new) == 0 {
+		return existing
+	}
+
+	var cookieHeader strings.Builder
+	for i, c := range new {
+		if i > 0 {
+			cookieHeader.WriteString("; ")
+		}
+		cookieHeader.WriteString(c.Name + "=" + c.Value)
+	}
+
+	found := false
+	for _, header := range existing {
+		if strings.EqualFold(header.Name, "Cookie") {
+			header.Value = header.Value + "; " + cookieHeader.String()
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		existing = append(existing, &harfile.NameValuePair{
+			Name:  "Cookie",
+			Value: cookieHeader.String(),
+		})
+	}
+
+	return existing
 }
