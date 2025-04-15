@@ -226,7 +226,7 @@ func computeHeadersSize() int64 {
 	headersSize += len(REQ_HEADER2_NAME + ": " + REQ_HEADER2_VALUE + "\r\n")
 	headersSize += len(REQ_HEADER1_NAME + ": " + REQ_HEADER1_VALUE + "\r\n")
 	headersSize += len(converter.CookieKey + ": " + REQ_COOKIE_NAME + "=" + REQ_COOKIE_VALUE + "\r\n")
-	headersSize += len("\r\n\r\n")
+	headersSize += len("\r\n")
 
 	return int64(headersSize)
 }

@@ -130,6 +130,6 @@ func computeRequestHeadersSize(req *http.Request, harHeaders []*harfile.NameValu
 		headersSize += len(headerLine)
 	}
 
-	headersSize += len("\r\n\r\n")
+	headersSize += len("\r\n")
 	return int64(headersSize)
 }
