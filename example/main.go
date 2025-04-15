@@ -20,7 +20,7 @@ func main() {
 		tls_client.NewNoopLogger(),
 		tls_client.WithCookieJar(tls_client.NewCookieJar()),
 		tls_client.WithNotFollowRedirects(),
-		tls_client.WithCharlesProxy("127.0.0.1", "8888"), // TODO : do not commit this
+		// tls_client.WithCharlesProxy("127.0.0.1", "8888"), // TODO : do not commit this
 	)
 
 	// 1. Get with query parameters

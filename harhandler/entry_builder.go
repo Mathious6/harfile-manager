@@ -20,16 +20,16 @@ type EntryBuilder struct {
 }
 
 // NewEntryWithRequest creates a new EntryBuilder with the given request and cookies. It
-// immediately attaches the request as HAR request in the underlying entry and merge cookies (if
-// any) into the request headers and cookies.
-func NewEntryWithRequest(req *http.Request, cookies []*http.Cookie) (*EntryBuilder, error) {
+// immediately attaches the request as a HAR request in the underlying entry, merging cookies
+// into both the request headers and cookie list.
+func NewEntryWithRequest(req *http.Request, additionalCookies []*http.Cookie) (*EntryBuilder, error) {
 	harReq, err := converter.FromHTTPRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	harReq.Headers = mergeCookieHeader(harReq.Headers, cookies)
-	harReq.Cookies = mergeCookies(harReq.Cookies, cookies)
+	harReq.Headers = mergeCookieHeader(harReq.Headers, additionalCookies)
+	harReq.Cookies = mergeCookies(harReq.Cookies, additionalCookies)
 
 	return &EntryBuilder{
 		entry: &harfile.Entry{
@@ -47,54 +47,54 @@ func NewEntryWithRequest(req *http.Request, cookies []*http.Cookie) (*EntryBuild
 }
 
 // AddResponse attaches an HTTP response to the entry and updates timing information.
-func (e *EntryBuilder) AddResponse(resp *http.Response) error {
+func (b *EntryBuilder) AddResponse(resp *http.Response) error {
 	harResp, err := converter.FromHTTPResponse(resp)
 	if err != nil {
 		return err
 	}
-	e.entry.Response = harResp
+	b.entry.Response = harResp
 
-	e.entry.Timings.Receive = float64(time.Since(e.entry.StartedDateTime).Milliseconds())
-	e.entry.Time = e.entry.Timings.Total()
+	b.entry.Timings.Receive = float64(time.Since(b.entry.StartedDateTime).Milliseconds())
+	b.entry.Time = b.entry.Timings.Total()
 
 	return nil
 }
 
 // Build finalizes the HAR entry. If resolveIP is true, the server IP address will be resolved and
 // stored in the entry.
-func (e *EntryBuilder) Build(resolveIP bool) *harfile.Entry {
-	if resolveIP && e.entry.Request != nil {
-		e.entry.ServerIPAddress = getServerIPAddress(e.entry.Request.URL)
+func (b *EntryBuilder) Build(resolveIP bool) *harfile.Entry {
+	if resolveIP && b.entry.Request != nil {
+		b.entry.ServerIPAddress = resolveServerIPAddress(b.entry.Request.URL)
 	}
-	return e.entry
+	return b.entry
 }
 
-// getServerIPAddress resolves the first IP address for the given URL and returns an empty string if
-// resolution fails. This is a blocking call and may take time to resolve.
-func getServerIPAddress(reqUrl string) string {
-	parsedUrl, err := url.Parse(reqUrl)
+// resolveServerIPAddress resolves the first IP address for the given URL. Returns an empty
+// string if resolution fails. This is a blocking call and may take time to resolve.
+func resolveServerIPAddress(rawURL string) string {
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return ""
 	}
 
-	ips, err := net.DefaultResolver.LookupIPAddr(context.Background(), parsedUrl.Hostname())
-	if err != nil || len(ips) == 0 {
+	ipAddrs, err := net.DefaultResolver.LookupIPAddr(context.Background(), parsedURL.Hostname())
+	if err != nil || len(ipAddrs) == 0 {
 		return ""
 	}
-	return ips[0].IP.String()
+	return ipAddrs[0].IP.String()
 }
 
-// mergeCookies appends new cookies to the existing cookie slice.
-func mergeCookies(existing []*harfile.Cookie, new []*http.Cookie) []*harfile.Cookie {
-	if len(new) == 0 {
-		return existing
+// mergeCookies appends new cookies into an existing cookie slice.
+func mergeCookies(existingCookies []*harfile.Cookie, newCookies []*http.Cookie) []*harfile.Cookie {
+	if len(newCookies) == 0 {
+		return existingCookies
 	}
 
-	merged := make([]*harfile.Cookie, 0, len(existing)+len(new))
-	merged = append(merged, existing...)
+	combined := make([]*harfile.Cookie, 0, len(existingCookies)+len(newCookies))
+	combined = append(combined, existingCookies...)
 
-	for _, c := range new {
-		merged = append(merged, &harfile.Cookie{
+	for _, c := range newCookies {
+		combined = append(combined, &harfile.Cookie{
 			Name:     c.Name,
 			Value:    c.Value,
 			Path:     c.Path,
@@ -104,35 +104,33 @@ func mergeCookies(existing []*harfile.Cookie, new []*http.Cookie) []*harfile.Coo
 			Secure:   c.Secure,
 		})
 	}
-
-	return merged
-
+	return combined
 }
 
 // mergeCookieHeader merges new cookies into an existing "Cookie" header, or adds a new "Cookie"
-// header if none exists.
-func mergeCookieHeader(existing []*harfile.NVPair, new []*http.Cookie) []*harfile.NVPair {
-	if len(new) == 0 {
-		return existing
+// header if one doesn't already exist.
+func mergeCookieHeader(existingHeaders []*harfile.NVPair, newCookies []*http.Cookie) []*harfile.NVPair {
+	if len(newCookies) == 0 {
+		return existingHeaders
 	}
 
-	var cookieHeader strings.Builder
-	for i, c := range new {
+	var mergedCookieValue strings.Builder
+	for i, c := range newCookies {
 		if i > 0 {
-			cookieHeader.WriteString("; ")
+			mergedCookieValue.WriteString("; ")
 		}
-		cookieHeader.WriteString(c.Name + "=" + c.Value)
+		mergedCookieValue.WriteString(c.Name + "=" + c.Value)
 	}
 
-	for _, header := range existing {
-		if strings.EqualFold(header.Name, "Cookie") {
-			header.Value = header.Value + "; " + cookieHeader.String()
-			return existing
+	for _, hdr := range existingHeaders {
+		if strings.EqualFold(hdr.Name, "Cookie") {
+			hdr.Value += "; " + mergedCookieValue.String()
+			return existingHeaders
 		}
 	}
 
-	return append(existing, &harfile.NVPair{
+	return append(existingHeaders, &harfile.NVPair{
 		Name:  "Cookie",
-		Value: cookieHeader.String(),
+		Value: mergedCookieValue.String(),
 	})
 }
