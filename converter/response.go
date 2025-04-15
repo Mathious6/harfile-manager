@@ -48,7 +48,7 @@ func buildContent(resp *http.Response) (*harfile.Content, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	resp.Body = io.NopCloser(bytes.NewBuffer(buf))
+	resp.Body = io.NopCloser(bytes.NewReader(buf))
 
 	return &harfile.Content{
 		Size:        int64(len(buf)),

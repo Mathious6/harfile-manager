@@ -1,12 +1,14 @@
 // Package harhandler provides functionality to build HAR entries from bogdanfinn/fhttp requests
-// and responses.
+// and responses. It ensures correct extraction of request and response data into the HAR format,
+// including body content, headers, cookies, and timing information.
 package harhandler
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/Mathious6/harkit/converter"
@@ -19,17 +21,22 @@ type EntryBuilder struct {
 	entry *harfile.Entry
 }
 
-// NewEntryWithRequest creates a new EntryBuilder with the given request and cookies. It
-// immediately attaches the request as a HAR request in the underlying entry, merging cookies
-// into both the request headers and cookie list.
+// NewEntryWithRequest creates a new EntryBuilder from the given HTTP request and optional cookies.
+// It clones the request and preserves the request body to ensure that the original request remains
+// usable. The body is read once, stored in memory, and restored on both the original and cloned
+// request. Additional cookies are added to the cloned request before it is transformed into a
+// HAR-compatible structure.
 func NewEntryWithRequest(req *http.Request, additionalCookies []*http.Cookie) (*EntryBuilder, error) {
-	harReq, err := converter.FromHTTPRequest(req)
+	clonedReq, _ := cloneRequestPreserveBody(req)
+
+	for _, c := range additionalCookies {
+		clonedReq.AddCookie(c)
+	}
+
+	harReq, err := converter.FromHTTPRequest(clonedReq)
 	if err != nil {
 		return nil, err
 	}
-
-	harReq.Headers = mergeCookieHeader(harReq.Headers, additionalCookies)
-	harReq.Cookies = mergeCookies(harReq.Cookies, additionalCookies)
 
 	return &EntryBuilder{
 		entry: &harfile.Entry{
@@ -46,7 +53,8 @@ func NewEntryWithRequest(req *http.Request, additionalCookies []*http.Cookie) (*
 	}, nil
 }
 
-// AddResponse attaches an HTTP response to the entry and updates timing information.
+// AddResponse attaches an HTTP response to the HAR entry and records the time elapsed since the
+// request was initiated. This sets the response block and populates the receive timing.
 func (b *EntryBuilder) AddResponse(resp *http.Response) error {
 	harResp, err := converter.FromHTTPResponse(resp)
 	if err != nil {
@@ -60,8 +68,8 @@ func (b *EntryBuilder) AddResponse(resp *http.Response) error {
 	return nil
 }
 
-// Build finalizes the HAR entry. If resolveIP is true, the server IP address will be resolved and
-// stored in the entry.
+// Build finalizes and returns the HAR entry. If resolveIP is true, it attempts to resolve the
+// server's IP address using a DNS lookup based on the request URL.
 func (b *EntryBuilder) Build(resolveIP bool) *harfile.Entry {
 	if resolveIP && b.entry.Request != nil {
 		b.entry.ServerIPAddress = resolveServerIPAddress(b.entry.Request.URL)
@@ -69,8 +77,8 @@ func (b *EntryBuilder) Build(resolveIP bool) *harfile.Entry {
 	return b.entry
 }
 
-// resolveServerIPAddress resolves the first IP address for the given URL. Returns an empty
-// string if resolution fails. This is a blocking call and may take time to resolve.
+// resolveServerIPAddress performs a DNS lookup on the given URL and returns the first resolved
+// IP address as a string. Returns an empty string on failure. This is a blocking operation.
 func resolveServerIPAddress(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
@@ -84,53 +92,23 @@ func resolveServerIPAddress(rawURL string) string {
 	return ipAddrs[0].IP.String()
 }
 
-// mergeCookies appends new cookies into an existing cookie slice.
-func mergeCookies(existingCookies []*harfile.Cookie, newCookies []*http.Cookie) []*harfile.Cookie {
-	if len(newCookies) == 0 {
-		return existingCookies
+// cloneRequestPreserveBody clones an HTTP request and preserves its body by reading it into memory
+// and assigning new readers to both the original and cloned request. This allows for safe reuse of
+// both requests without consuming the body multiple times.
+func cloneRequestPreserveBody(req *http.Request) (*http.Request, error) {
+	if req.Body == nil {
+		return req.Clone(req.Context()), nil
 	}
 
-	combined := make([]*harfile.Cookie, 0, len(existingCookies)+len(newCookies))
-	combined = append(combined, existingCookies...)
-
-	for _, c := range newCookies {
-		combined = append(combined, &harfile.Cookie{
-			Name:     c.Name,
-			Value:    c.Value,
-			Path:     c.Path,
-			Domain:   c.Domain,
-			Expires:  c.RawExpires,
-			HTTPOnly: c.HttpOnly,
-			Secure:   c.Secure,
-		})
+	buf, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, err
 	}
-	return combined
-}
+	defer req.Body.Close()
+	req.Body = io.NopCloser(bytes.NewReader(buf))
 
-// mergeCookieHeader merges new cookies into an existing "Cookie" header, or adds a new "Cookie"
-// header if one doesn't already exist.
-func mergeCookieHeader(existingHeaders []*harfile.NVPair, newCookies []*http.Cookie) []*harfile.NVPair {
-	if len(newCookies) == 0 {
-		return existingHeaders
-	}
+	clonedReq := req.Clone(req.Context())
+	clonedReq.Body = io.NopCloser(bytes.NewReader(buf))
 
-	var mergedCookieValue strings.Builder
-	for i, c := range newCookies {
-		if i > 0 {
-			mergedCookieValue.WriteString("; ")
-		}
-		mergedCookieValue.WriteString(c.Name + "=" + c.Value)
-	}
-
-	for _, hdr := range existingHeaders {
-		if strings.EqualFold(hdr.Name, "Cookie") {
-			hdr.Value += "; " + mergedCookieValue.String()
-			return existingHeaders
-		}
-	}
-
-	return append(existingHeaders, &harfile.NVPair{
-		Name:  "Cookie",
-		Value: mergedCookieValue.String(),
-	})
+	return clonedReq, nil
 }

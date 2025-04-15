@@ -58,7 +58,7 @@ func extractPostData(req *http.Request) (*harfile.PostData, error) {
 		return nil, err
 	}
 	defer req.Body.Close()
-	req.Body = io.NopCloser(bytes.NewBuffer(buf))
+	req.Body = io.NopCloser(bytes.NewReader(buf))
 
 	mimeType := req.Header.Get(ContentTypeKey)
 	postData := &harfile.PostData{MimeType: mimeType}
