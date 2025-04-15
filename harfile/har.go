@@ -192,10 +192,12 @@ func (t *Timings) Total() float64 {
 
 // Save saves the HAR data to a file in JSON format under the specified filename.
 func (h *HAR) Save(filename string) error {
-	jsonBytes, err := json.MarshalIndent(h, "", "  ")
+	jsonBytes, err := json.MarshalIndent(h, "", "    ")
 	if err != nil {
 		return err
 	}
+
+	jsonBytes = append(jsonBytes, '\n')
 
 	err = os.WriteFile(filename, jsonBytes, 0644)
 	if err != nil {
