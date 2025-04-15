@@ -39,7 +39,7 @@ func NewHandler(opts ...HandlerOption) *HARHandler {
 }
 
 func (h *HARHandler) AddEntry(builder *EntryBuilder) {
-	entry := builder.build(h.resolveIPAddress)
+	entry := builder.Build(h.resolveIPAddress)
 	h.log.Entries = append(h.log.Entries, entry)
 }
 

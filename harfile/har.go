@@ -1,4 +1,5 @@
 // Package harfile provides types for working with HAR (HTTP Archive) 1.2 files.
+//
 // See: http://www.softwareishard.com/blog/har-12-spec/
 package harfile
 
@@ -46,19 +47,18 @@ type Page struct {
 	Comment         string       `json:"comment,omitempty"` // A comment provided by the user or the application.
 }
 
-// PageTimings describes timings for various events (states) fired during the
-// page load. All times are specified in milliseconds. If a time info is not
-// available appropriate field is set to -1.
+// PageTimings describes timings for various events (states) fired during the page load. All times
+// are specified in milliseconds. If a time info is not available appropriate field is set to -1.
 type PageTimings struct {
 	OnContentLoad float64 `json:"onContentLoad,omitempty,omitzero"` // Content of the page loaded. Number of milliseconds since page load started (page.startedDateTime). Use -1 if the timing does not apply to the current request.
 	OnLoad        float64 `json:"onLoad,omitempty,omitzero"`        // Page is loaded (onLoad event fired). Number of milliseconds since page load started (page.startedDateTime). Use -1 if the timing does not apply to the current request.
 	Comment       string  `json:"comment,omitempty"`                // A comment provided by the user or the application.
 }
 
-// Entry represents an array with all exported HTTP requests. Sorting entries
-// by startedDateTime (starting from the oldest) is preferred way how to export
-// data since it can make importing faster. However the reader application
-// should always make sure the array is sorted (if required for the import).
+// Entry represents an array with all exported HTTP requests. Sorting entries by startedDateTime
+// (starting from the oldest) is preferred way how to export data since it can make importing
+// faster. However the reader application should always make sure the array is sorted (if required
+// for the import).
 type Entry struct {
 	Pageref         string    `json:"pageref,omitempty"`         // Reference to the parent page. Leave out this field if the application does not support grouping by pages.
 	StartedDateTime time.Time `json:"startedDateTime"`           // Date and time stamp of the request start (ISO 8601 - YYYY-MM-DDThh:mm:ss.sTZD).
@@ -74,34 +74,33 @@ type Entry struct {
 
 // Request contains detailed info about performed request.
 type Request struct {
-	Method      string           `json:"method"`             // Request method (GET, POST, ...).
-	URL         string           `json:"url"`                // Absolute URL of the request (fragments are not included).
-	HTTPVersion string           `json:"httpVersion"`        // Request HTTP Version.
-	Cookies     []*Cookie        `json:"cookies"`            // List of cookie objects.
-	Headers     []*NameValuePair `json:"headers"`            // List of header objects.
-	QueryString []*NameValuePair `json:"queryString"`        // List of query parameter objects.
-	PostData    *PostData        `json:"postData,omitempty"` // Posted data info.
-	HeadersSize int64            `json:"headersSize"`        // Total number of bytes from the start of the HTTP request message until (and including) the double CRLF before the body. Set to -1 if the info is not available.
-	BodySize    int64            `json:"bodySize"`           // Size of the request body (POST data payload) in bytes. Set to -1 if the info is not available.
-	Comment     string           `json:"comment,omitempty"`  // A comment provided by the user or the application.
+	Method      string    `json:"method"`             // Request method (GET, POST, ...).
+	URL         string    `json:"url"`                // Absolute URL of the request (fragments are not included).
+	HTTPVersion string    `json:"httpVersion"`        // Request HTTP Version.
+	Cookies     []*Cookie `json:"cookies"`            // List of cookie objects.
+	Headers     []*NVPair `json:"headers"`            // List of header objects.
+	QueryString []*NVPair `json:"queryString"`        // List of query parameter objects.
+	PostData    *PostData `json:"postData,omitempty"` // Posted data info.
+	HeadersSize int64     `json:"headersSize"`        // Total number of bytes from the start of the HTTP request message until (and including) the double CRLF before the body. Set to -1 if the info is not available.
+	BodySize    int64     `json:"bodySize"`           // Size of the request body (POST data payload) in bytes. Set to -1 if the info is not available.
+	Comment     string    `json:"comment,omitempty"`  // A comment provided by the user or the application.
 }
 
 // Response contains detailed info about the response.
 type Response struct {
-	Status      int64            `json:"status"`            // Response status.
-	StatusText  string           `json:"statusText"`        // Response status description.
-	HTTPVersion string           `json:"httpVersion"`       // Response HTTP Version.
-	Cookies     []*Cookie        `json:"cookies"`           // List of cookie objects.
-	Headers     []*NameValuePair `json:"headers"`           // List of header objects.
-	Content     *Content         `json:"content"`           // Details about the response body.
-	RedirectURL *string          `json:"redirectURL"`       // Redirection target URL from the Location response header.
-	HeadersSize int64            `json:"headersSize"`       // Total number of bytes from the start of the HTTP response message until (and including) the double CRLF before the body. Set to -1 if the info is not available.
-	BodySize    int64            `json:"bodySize"`          // Size of the received response body in bytes. Set to zero in case of responses coming from the cache (304). Set to -1 if the info is not available.
-	Comment     string           `json:"comment,omitempty"` // A comment provided by the user or the application.
+	Status      int64     `json:"status"`            // Response status.
+	StatusText  string    `json:"statusText"`        // Response status description.
+	HTTPVersion string    `json:"httpVersion"`       // Response HTTP Version.
+	Cookies     []*Cookie `json:"cookies"`           // List of cookie objects.
+	Headers     []*NVPair `json:"headers"`           // List of header objects.
+	Content     *Content  `json:"content"`           // Details about the response body.
+	RedirectURL *string   `json:"redirectURL"`       // Redirection target URL from the Location response header.
+	HeadersSize int64     `json:"headersSize"`       // Total number of bytes from the start of the HTTP response message until (and including) the double CRLF before the body. Set to -1 if the info is not available.
+	BodySize    int64     `json:"bodySize"`          // Size of the received response body in bytes. Set to zero in case of responses coming from the cache (304). Set to -1 if the info is not available.
+	Comment     string    `json:"comment,omitempty"` // A comment provided by the user or the application.
 }
 
-// Cookie contains list of all cookies (used in [Request] and [Response]
-// objects).
+// Cookie contains list of all cookies (used in [Request] and [Response] objects).
 type Cookie struct {
 	Name     string `json:"name"`               // The name of the cookie.
 	Value    string `json:"value"`              // The cookie value.
@@ -113,15 +112,15 @@ type Cookie struct {
 	Comment  string `json:"comment,omitempty"`  // A comment provided by the user or the application.
 }
 
-// NameValuePair describes a name/value pair.
-type NameValuePair struct {
+// NVPair describes a name/value pair.
+type NVPair struct {
 	Name    string `json:"name"`              // Name of the pair.
 	Value   string `json:"value"`             // Value of the pair.
 	Comment string `json:"comment,omitempty"` // A comment provided by the user or the application.
 }
 
-// PostData describes posted data, if any (embedded in [Request] object).
-// Text and params fields are mutually exclusive.
+// PostData describes posted data, if any (embedded in [Request] object). Text and params fields are
+// mutually exclusive.
 type PostData struct {
 	MimeType string   `json:"mimeType"`          // Mime type of posted data.
 	Params   []*Param `json:"params,omitempty"`  // List of posted parameters (in case of URL encoded parameters).
@@ -138,8 +137,7 @@ type Param struct {
 	Comment     string `json:"comment,omitempty"`     // A comment provided by the user or the application.
 }
 
-// Content describes details about response content (embedded in [Response]
-// object).
+// Content describes details about response content (embedded in [Response] object).
 type Content struct {
 	Size        int64  `json:"size"`                  // Length of the returned content in bytes. Should be equal to response.bodySize if there is no compression and bigger when the content has been compressed.
 	Compression int64  `json:"compression,omitempty"` // Number of bytes saved. Leave out this field if the information is not available.
@@ -165,8 +163,8 @@ type CacheData struct {
 	Comment    string `json:"comment,omitempty"` // A comment provided by the user or the application.
 }
 
-// Timings describes various phases within request-response round trip. All
-// times are specified in milliseconds.
+// Timings describes various phases within request-response round trip. All times are specified in
+// milliseconds.
 type Timings struct {
 	Blocked float64 `json:"blocked,omitempty,omitzero"` // Time spent in a queue waiting for a network connection. Use -1 if the timing does not apply to the current request.
 	DNS     float64 `json:"dns,omitempty,omitzero"`     // DNS resolution time. The time required to resolve a host name. Use -1 if the timing does not apply to the current request.
@@ -178,8 +176,8 @@ type Timings struct {
 	Comment string  `json:"comment,omitempty"`          // A comment provided by the user or the application.
 }
 
-// Total returns the total time of the request/response round trip.
-// Ignoring -1 values which indicate that the timing does not apply to the current request.
+// Total returns the total time of the request/response round trip. Ignoring -1 values which
+// indicate that the timing does not apply to the current request.
 func (t *Timings) Total() float64 {
 	sum := 0.0
 	for _, v := range []float64{t.Blocked, t.DNS, t.Connect, t.Send, t.Wait, t.Receive, t.Ssl} {

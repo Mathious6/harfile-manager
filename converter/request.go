@@ -36,12 +36,12 @@ func FromHTTPRequest(req *http.Request) (*harfile.Request, error) {
 	}, nil
 }
 
-func convertQueryParams(u *url.URL) []*harfile.NameValuePair {
-	result := make([]*harfile.NameValuePair, 0)
+func convertQueryParams(u *url.URL) []*harfile.NVPair {
+	result := make([]*harfile.NVPair, 0)
 
 	for key, values := range u.Query() {
 		for _, value := range values {
-			result = append(result, &harfile.NameValuePair{Name: key, Value: value})
+			result = append(result, &harfile.NVPair{Name: key, Value: value})
 		}
 	}
 
@@ -119,7 +119,7 @@ func extractPostData(req *http.Request) (*harfile.PostData, error) {
 	return postData, nil
 }
 
-func computeRequestHeadersSize(req *http.Request, harHeaders []*harfile.NameValuePair) int64 {
+func computeRequestHeadersSize(req *http.Request, harHeaders []*harfile.NVPair) int64 {
 	headersSize := 0
 
 	requestLine := req.Method + " " + req.URL.RequestURI() + " " + req.Proto + "\r\n"
