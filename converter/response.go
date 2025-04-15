@@ -24,11 +24,11 @@ func FromHTTPResponse(resp *http.Response) (*harfile.Response, error) {
 		StatusText:  http.StatusText(resp.StatusCode),
 		HTTPVersion: resp.Proto,
 		Cookies:     convertCookies(resp.Cookies()),
-		Headers:     convertHeaders(resp.Header, resp.ContentLength),
+		Headers:     convertHeaders(resp.Header, content.Size),
 		Content:     content,
 		RedirectURL: locateRedirectURL(resp),
 		HeadersSize: -1,
-		BodySize:    resp.ContentLength,
+		BodySize:    content.Size,
 	}, nil
 }
 
