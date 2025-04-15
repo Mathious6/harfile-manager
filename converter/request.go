@@ -16,7 +16,7 @@ func FromHTTPRequest(req *http.Request) (*harfile.Request, error) {
 		return nil, errors.New("request cannot be nil")
 	}
 
-	headers := convertHeaders(req.Header)
+	headers := convertHeaders(req.Header, req.ContentLength)
 
 	postData, err := extractPostData(req)
 	if err != nil {

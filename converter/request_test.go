@@ -30,8 +30,9 @@ const (
 	REQ_URL_CONTENT_TYPE = "application/x-www-form-urlencoded"
 	REQ_BODY_URL         = "foo=bar"
 
-	REQ_JSON_CONTENT_TYPE = "application/json"
-	REQ_BODY_JSON         = `{"foo":"bar"}`
+	REQ_JSON_CONTENT_TYPE         = "application/json"
+	REQ_BODY_JSON                 = `{"foo":"bar"}`
+	REQ_JSON_CONTENT_LENGTH_VALUE = "13"
 
 	REQ_PART1_NAME         = "name1"
 	REQ_PART1_VALUE        = "value1"
@@ -112,6 +113,15 @@ func TestConverter_GivenURLWithQueryString_WhenConvertingHTTPRequest_ThenQuerySt
 	assert.Equal(t, "bar", result.QueryString[0].Value, "HAR query string value <> request query string value")
 }
 
+func TestConverter_GivenEmptyBody_WhenConvertingHTTPRequest_ThenContentLengthShouldNotBeSet(t *testing.T) {
+	req := createRequest(t, nil, "")
+
+	result, err := converter.FromHTTPRequest(req)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, converter.ContentLengthKey, result.Headers[2].Name, "HAR content length header value should not be set")
+}
+
 func TestConverter_GivenURLEncodedBody_WhenConvertingHTTPRequest_ThenPostDataShouldBeCorrect(t *testing.T) {
 	req := createRequest(t, strings.NewReader(REQ_BODY_URL), REQ_URL_CONTENT_TYPE)
 
@@ -135,6 +145,16 @@ func TestConverter_GivenJSONBody_WhenConvertingHTTPRequest_ThenPostDataShouldBeC
 	assert.NotEmpty(t, result.PostData.Text, "HAR should have post data text")
 	assert.Equal(t, REQ_BODY_JSON, result.PostData.Text, "HAR post data text <> request post data text")
 	assert.Equal(t, REQ_JSON_CONTENT_TYPE, result.PostData.MimeType, "HAR post data mime type <> request post data mime type")
+}
+
+func TestConverter_GivenJSONBody_WhenConvertingHTTPRequest_ThenContentLengthShouldBeSet(t *testing.T) {
+	req := createRequest(t, strings.NewReader(REQ_BODY_JSON), REQ_JSON_CONTENT_TYPE)
+
+	result, err := converter.FromHTTPRequest(req)
+	require.NoError(t, err)
+
+	assert.Equal(t, converter.ContentLengthKey, result.Headers[2].Name, "HAR content length header name <> request content length header name")
+	assert.Equal(t, REQ_JSON_CONTENT_LENGTH_VALUE, result.Headers[2].Value, "HAR content length header value <> request content length header value")
 }
 
 func TestConverter_GivenMultipartBody_WhenConvertingHTTPRequest_ThenPostDataShouldBeCorrect(t *testing.T) {
@@ -189,6 +209,7 @@ func createRequest(t *testing.T, body io.Reader, contentType string) *http.Reque
 
 	req.Header.Add(http.HeaderOrderKey, REQ_HEADER2_NAME)
 	req.Header.Add(http.HeaderOrderKey, REQ_HEADER1_NAME)
+	req.Header.Add(http.HeaderOrderKey, converter.ContentLengthKey)
 
 	if contentType != "" {
 		req.Header.Add(converter.ContentTypeKey, contentType)

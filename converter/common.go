@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -9,10 +10,11 @@ import (
 )
 
 const (
-	ContentTypeKey = "Content-Type"
-	CookieKey      = "Cookie"
-	SetCookieKey   = "Set-Cookie"
-	LocationKey    = "Location"
+	ContentLengthKey = "Content-Length"
+	ContentTypeKey   = "Content-Type"
+	CookieKey        = "Cookie"
+	SetCookieKey     = "Set-Cookie"
+	LocationKey      = "Location"
 )
 
 func convertCookies(cookies []*http.Cookie) []*harfile.Cookie {
@@ -38,22 +40,32 @@ func convertCookies(cookies []*http.Cookie) []*harfile.Cookie {
 	return harCookies
 }
 
-func convertHeaders(header http.Header) []*harfile.NameValuePair {
-	harHeaders := make([]*harfile.NameValuePair, 0, len(header))
+func convertHeaders(header http.Header, contentLength int64) []*harfile.NameValuePair {
+	// By default, client adds Content-Length header later on, so we need to add it here
+	// We clone the header to avoid modifying the original one to avoid side effects
+	clonedHeader := header.Clone()
+	if contentLength > 0 && clonedHeader.Get(ContentLengthKey) == "" {
+		clonedHeader.Set(ContentLengthKey, fmt.Sprintf("%d", contentLength))
+	}
+
+	harHeaders := make([]*harfile.NameValuePair, 0, len(clonedHeader))
+	seen := make(map[string]bool)
 
 	// Used to sort headers in HAR file if needed (e.g. https://github.com/bogdanfinn/tls-client)
-	seen := make(map[string]bool)
-	for _, name := range header.Values(http.HeaderOrderKey) {
-		if values := header.Values(name); len(values) > 0 {
-			name = http.CanonicalHeaderKey(name)
+	order := clonedHeader.Values(http.HeaderOrderKey)
+	for _, name := range order {
+		canonical := http.CanonicalHeaderKey(name)
+		values := clonedHeader.Values(name)
+
+		if len(values) > 0 {
 			for _, value := range values {
-				harHeaders = append(harHeaders, &harfile.NameValuePair{Name: name, Value: value})
+				harHeaders = append(harHeaders, &harfile.NameValuePair{Name: canonical, Value: value})
 			}
-			seen[name] = true
+			seen[canonical] = true
 		}
 	}
 
-	for name, values := range header {
+	for name, values := range clonedHeader {
 		if seen[name] || strings.EqualFold(name, http.HeaderOrderKey) {
 			continue
 		}

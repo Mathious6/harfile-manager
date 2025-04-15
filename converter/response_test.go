@@ -28,8 +28,9 @@ const (
 	RESP_COOKIE_HTTPONLY = true
 	RESP_COOKIE_SECURE   = true
 
-	RESP_BODY_TEXT    = "response"
-	RESP_CONTENT_TYPE = "text/plain"
+	RESP_BODY_TEXT                 = "response"
+	RESP_CONTENT_TYPE              = "text/plain"
+	RESP_JSON_CONTENT_LENGTH_VALUE = "8"
 
 	RESP_LOCATION = "https://example.com/redirect"
 )
@@ -128,6 +129,25 @@ func TestConverter_GivenBody_WhenConvertingHTTPResponse_ThenBodySizeShouldBeCorr
 	assert.Equal(t, int64(len(RESP_BODY_TEXT)), result.BodySize, "HAR body size <> response body size")
 }
 
+func TestConverter_GivenEmptyBody_WhenConvertingHTTPResponse_ThenContentLengthShouldNotBeSet(t *testing.T) {
+	resp := createResponse(t, RESP_OK_CODE, bytes.NewBufferString(""), RESP_CONTENT_TYPE)
+
+	result, err := converter.FromHTTPResponse(resp)
+	require.NoError(t, err)
+
+	assert.Len(t, result.Headers, 3, "HAR should contain 3 header")
+}
+
+func TestConverter_GivenBody_WhenConvertingHTTPResponse_ThenContentLengthShouldBeSet(t *testing.T) {
+	resp := createResponse(t, RESP_OK_CODE, bytes.NewBufferString(RESP_BODY_TEXT), RESP_CONTENT_TYPE)
+
+	result, err := converter.FromHTTPResponse(resp)
+	require.NoError(t, err)
+
+	assert.Len(t, result.Headers, 4, "HAR should contain 4 header")
+	assert.Equal(t, RESP_JSON_CONTENT_LENGTH_VALUE, result.Headers[3].Value, "HAR content length <> response content length")
+}
+
 func createResponse(t *testing.T, statusCode int, body io.Reader, contentType string) *http.Response {
 	var buf []byte
 	var err error
@@ -152,15 +172,19 @@ func createResponse(t *testing.T, statusCode int, body io.Reader, contentType st
 	cookie += ";httponly"
 	cookie += ";secure"
 
-	resp.Header.Add(RESP_HEADER_NAME, RESP_HEADER_VALUE)
-	resp.Header.Add(converter.SetCookieKey, cookie)
+	resp.Header.Append(RESP_HEADER_NAME, RESP_HEADER_VALUE)
+	resp.Header.Append(converter.SetCookieKey, cookie)
 
 	if contentType != "" {
-		resp.Header.Set(converter.ContentTypeKey, contentType)
+		resp.Header.Append(converter.ContentTypeKey, contentType)
+	}
+
+	if len(buf) > 0 {
+		resp.Header.Append(converter.ContentLengthKey, RESP_JSON_CONTENT_LENGTH_VALUE)
 	}
 
 	if statusCode >= 300 && statusCode < 400 {
-		resp.Header.Set(converter.LocationKey, RESP_LOCATION)
+		resp.Header.Append(converter.LocationKey, RESP_LOCATION)
 	}
 
 	return resp

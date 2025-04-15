@@ -24,7 +24,7 @@ func FromHTTPResponse(resp *http.Response) (*harfile.Response, error) {
 		StatusText:  http.StatusText(resp.StatusCode),
 		HTTPVersion: resp.Proto,
 		Cookies:     convertCookies(resp.Cookies()),
-		Headers:     convertHeaders(resp.Header),
+		Headers:     convertHeaders(resp.Header, resp.ContentLength),
 		Content:     content,
 		RedirectURL: locateRedirectURL(resp),
 		HeadersSize: -1,
