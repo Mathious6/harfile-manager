@@ -1,6 +1,7 @@
 // Package harhandler provides functionality to build HAR entries from bogdanfinn/fhttp requests
-// and responses. It ensures correct extraction of request and response data into the HAR format,
-// including body content, headers, cookies, and timing information.
+// and responses. It allows deferred HAR construction after the request is executed, ensuring
+// accurate extraction of request and response data, including body content, headers, cookies,
+// and timing information.
 package harhandler
 
 import (
@@ -16,33 +17,19 @@ import (
 	http "github.com/bogdanfinn/fhttp"
 )
 
-// EntryBuilder builds a HAR entry from a bogdanfinn/fhttp request and optionally a response.
+// EntryBuilder builds a HAR entry from a bogdanfinn/fhttp request and response.
+// It encapsulates all relevant data including timings, headers, cookies, and body content.
 type EntryBuilder struct {
 	entry *harfile.Entry
 }
 
-// NewEntryWithRequest creates a new EntryBuilder from the given HTTP request and optional cookies.
-// It clones the request and preserves the request body to ensure that the original request remains
-// usable. The body is read once, stored in memory, and restored on both the original and cloned
-// request. Additional cookies are added to the cloned request before it is transformed into a
-// HAR-compatible structure.
-func NewEntryWithRequest(req *http.Request, additionalCookies []*http.Cookie) (*EntryBuilder, error) {
-	clonedReq, _ := cloneRequestPreserveBody(req)
-
-	for _, c := range additionalCookies {
-		clonedReq.AddCookie(c)
-	}
-
-	harReq, err := converter.FromHTTPRequest(clonedReq)
-	if err != nil {
-		return nil, err
-	}
-
+// NewEntry initializes an empty HAR entry with default fields and timing placeholders.
+// Use AddEntry to attach the request and response data once the request is completed.
+func NewEntry() *EntryBuilder {
 	return &EntryBuilder{
 		entry: &harfile.Entry{
 			StartedDateTime: time.Now(),
 			Time:            -1,
-			Request:         harReq,
 			Cache:           &harfile.Cache{},
 			Timings: &harfile.Timings{
 				Send:    -1,
@@ -50,26 +37,45 @@ func NewEntryWithRequest(req *http.Request, additionalCookies []*http.Cookie) (*
 				Receive: -1,
 			},
 		},
-	}, nil
+	}
 }
 
-// AddResponse attaches an HTTP response to the HAR entry and records the time elapsed since the
-// request was initiated. This sets the response block and populates the receive timing.
-func (b *EntryBuilder) AddResponse(resp *http.Response) error {
+// AddEntry populates the HAR entry with the given HTTP request and response, as well as any
+// additional cookies. It clones and restores the request body to prevent side effects.
+// This method should be called after the HTTP request is executed to avoid blocking.
+func (b *EntryBuilder) AddEntry(
+	req *http.Request, resp *http.Response, additionalCookies []*http.Cookie,
+) error {
+	b.entry.Timings.Receive = float64(time.Since(b.entry.StartedDateTime).Milliseconds())
+
+	clonedReq, err := cloneRequestPreserveBody(req)
+	if err != nil {
+		return err
+	}
+	for _, c := range additionalCookies {
+		clonedReq.AddCookie(c)
+	}
+
+	harReq, err := converter.FromHTTPRequest(clonedReq)
+	if err != nil {
+		return err
+	}
 	harResp, err := converter.FromHTTPResponse(resp)
 	if err != nil {
 		return err
 	}
+
+	b.entry.Request = harReq
 	b.entry.Response = harResp
 
-	b.entry.Timings.Receive = float64(time.Since(b.entry.StartedDateTime).Milliseconds())
+	b.entry.Timings.Wait = float64(time.Since(b.entry.StartedDateTime).Milliseconds()) - b.entry.Timings.Receive
 	b.entry.Time = b.entry.Timings.Total()
 
 	return nil
 }
 
-// Build finalizes and returns the HAR entry. If resolveIP is true, it attempts to resolve the
-// server's IP address using a DNS lookup based on the request URL.
+// Build finalizes and returns the constructed HAR entry.
+// If resolveIP is true, a DNS resolution will be performed on the request host.
 func (b *EntryBuilder) Build(resolveIP bool) *harfile.Entry {
 	if resolveIP && b.entry.Request != nil {
 		b.entry.ServerIPAddress = resolveServerIPAddress(b.entry.Request.URL)
@@ -92,9 +98,9 @@ func resolveServerIPAddress(rawURL string) string {
 	return ipAddrs[0].IP.String()
 }
 
-// cloneRequestPreserveBody clones an HTTP request and preserves its body by reading it into memory
-// and assigning new readers to both the original and cloned request. This allows for safe reuse of
-// both requests without consuming the body multiple times.
+// cloneRequestPreserveBody clones an HTTP request and preserves its body by buffering the content
+// into memory. Both the original and the cloned request will be reset with a fresh body reader,
+// allowing for safe reuse without data loss.
 func cloneRequestPreserveBody(req *http.Request) (*http.Request, error) {
 	if req.Body == nil {
 		return req.Clone(req.Context()), nil

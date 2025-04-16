@@ -58,16 +58,14 @@ func sendGetRequest(c tls_client.HttpClient, h *harhandler.HARHandler, URL strin
 	req.Header.Add(http.HeaderOrderKey, "user-agent")
 	req.Header.Add(http.HeaderOrderKey, "accept-encoding")
 
-	urlParsed, _ := url.Parse(URL)
-	cookies := c.GetCookies(urlParsed)
-	entry, _ := harhandler.NewEntryWithRequest(req, cookies)
-
+	entry := harhandler.NewEntry()
 	resp, err := c.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	_ = entry.AddResponse(resp)
+	urlParsed, _ := url.Parse(URL)
+	_ = entry.AddEntry(req, resp, c.GetCookies(urlParsed))
 
 	h.AddEntry(entry)
 }
@@ -90,16 +88,14 @@ func sendPostRequest(c tls_client.HttpClient, h *harhandler.HARHandler, URL stri
 	req.Header.Add(http.HeaderOrderKey, "user-agent")
 	req.Header.Add(http.HeaderOrderKey, "accept-encoding")
 
-	urlParsed, _ := url.Parse(URL)
-	cookies := c.GetCookies(urlParsed)
-	entry, _ := harhandler.NewEntryWithRequest(req, cookies)
-
+	entry := harhandler.NewEntry()
 	resp, err := c.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	_ = entry.AddResponse(resp)
+	urlParsed, _ := url.Parse(URL)
+	_ = entry.AddEntry(req, resp, c.GetCookies(urlParsed))
 
 	h.AddEntry(entry)
 }
